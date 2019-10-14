@@ -1,6 +1,7 @@
 <template>
   <div :class="$style.vueDrawableCanvas">
     <canvas ref="canvas"></canvas>
+    <a download="image.png" ref="download"><button @click="onSave">save</button></a>
   </div>
 </template>
 
@@ -17,7 +18,11 @@ export default {
   }),
   computed: {},
   methods: {
-    press(e: any) {},
+    onSave() {
+      const download = this.$refs.download;
+      const image = this.$refs.canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+      download.setAttribute('href', image);
+    },
   },
   mounted(): void {
     DrawingEngine(this.$refs.canvas);
@@ -29,9 +34,11 @@ export default {
 @import '~@/app/shared/design-system';
 
 .vueDrawableCanvas {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAAGUlEQVQImWNIKL/tiwszJJTf9mXABQabJADsDBn0cAxsQAAAAABJRU5ErkJggg==)
+    repeat;
   canvas {
-    height: 220px;
-    width: 490px;
+    height: 600px;
+    width: 100%;
     cursor: crosshair;
   }
 }
