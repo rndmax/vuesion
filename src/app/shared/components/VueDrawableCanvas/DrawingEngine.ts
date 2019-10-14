@@ -58,6 +58,12 @@ const draw = () => {
   context.clearRect(0, 0, canvas.width, canvas.height);
 
   points.forEach((point: IPoint, i: number) => {
+    if (point.tool === 'eraser') {
+      context.globalCompositeOperation = 'destination-out';
+    } else {
+      context.globalCompositeOperation = 'source-over';
+    }
+
     context.beginPath();
 
     if (point.moving && i) {
@@ -68,9 +74,9 @@ const draw = () => {
     context.lineTo(point.x, point.y);
 
     if (point.tool === 'eraser') {
-      context.globalCompositeOperation = 'destination-out';
+      context.strokeStyle = 'white';
     } else {
-      context.globalCompositeOperation = 'source-over';
+      context.strokeStyle = point.color;
     }
 
     context.lineCap = 'round';
