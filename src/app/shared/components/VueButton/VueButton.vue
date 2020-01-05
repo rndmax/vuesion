@@ -1,27 +1,29 @@
 <template>
   <component
     :is="as"
-    ref="button"
-    :to="isRouterLink && target"
-    :href="isRegularLink && target"
-    :disabled="disabled"
-    :class="cssClasses"
+    ref="buttonRef"
+    :to="isRouterLink && href"
+    :href="isRegularLink && href"
+    :disabled="isDisabled"
+    :class="[$style.button, $style[color], isDisabled && $style.disabled, isGhost && $style.ghost]"
     :style="{ width: actualWidth }"
     :event="!isDisabled && isRouterLink ? 'click' : null"
     :tabindex="isDisabled ? -1 : 0"
     :aria-hidden="isDisabled"
-    @click="click"
+    @click="onClick"
   >
-    <slot v-if="loading === false" />
-    <vue-loader v-if="loading === true" :class="$style.loader" />
+    <slot v-if="isLoading === false" />
+    <vue-loader v-else :class="$style.loader" />
   </component>
 </template>
 
 <script lang="ts">
-import VueLoader from '@components/VueLoader/VueLoader.vue';
+import { createComponent, computed } from '@vue/composition-api';
 import { variationValidator } from '@components/utils';
+import { getDomRef } from '@shared/composables/get-dom-ref';
+import VueLoader from '@components/VueLoader/VueLoader.vue';
 
-export default {
+export default createComponent({
   name: 'VueButton',
   components: {
     VueLoader,
@@ -30,63 +32,55 @@ export default {
     color: { type: String, validator: variationValidator, default: 'default' },
     disabled: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
-    as: { type: String, default: 'button' },
-    target: { type: String, default: null },
-    outlined: { type: Boolean, default: false },
     ghost: { type: Boolean, default: false },
+    as: { type: String, default: 'button' },
+    href: { type: String, default: null },
   },
-  computed: {
-    cssClasses() {
-      const classes = [this.$style.button, this.$style.ripple];
-
-      if (this.outlined || this.ghost) {
-        classes.push(this.$style.outlined);
-      }
-      if (this.ghost) {
-        classes.push(this.$style.ghost);
+  setup(props, { emit }) {
+    const buttonRef = getDomRef(null);
+    const actualWidth = computed(() => {
+      if (buttonRef.value === null) {
+        return null;
       }
 
-      classes.push(this.$style[this.color]);
+      const $el = buttonRef.value.getBoundingClientRect ? buttonRef.value : buttonRef.value.$el;
 
-      if (this.disabled || this.loading) {
-        classes.push(this.$style.disabled);
-      }
+      return props.loading ? `${$el.getBoundingClientRect().width}px` : null;
+    });
+    const isDisabled = computed(() => props.disabled || props.loading);
+    const isLoading = computed(() => props.loading);
+    const isGhost = computed(() => props.ghost);
+    const isRouterLink = computed(() => props.as === 'router-link');
+    const isRegularLink = computed(() => props.as === 'a');
 
-      return classes;
-    },
-    actualWidth() {
-      return this.loading && this.$refs.button ? `${this.$refs.button.getBoundingClientRect().width}px` : null;
-    },
-    isDisabled() {
-      return this.disabled || this.loading;
-    },
-    isRouterLink() {
-      return this.as === 'router-link';
-    },
-    isRegularLink() {
-      return this.as === 'a';
-    },
+    return {
+      actualWidth,
+      isDisabled,
+      isLoading,
+      isGhost,
+      isRouterLink,
+      isRegularLink,
+      onClick: (e: Event) => {
+        if (isRegularLink.value && isDisabled.value) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (isDisabled.value === false) {
+          emit('click', e);
+        }
+      },
+      buttonRef,
+    };
   },
-  methods: {
-    click(e: Event) {
-      if (this.isRegularLink && this.isDisabled) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-
-      if (this.isDisabled === false) {
-        this.$emit('click', e);
-      }
-    },
-  },
-};
+});
 </script>
 
 <style lang="scss" module>
 @import '~@/app/shared/design-system';
 
 .button {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   margin: $button-margin;
   padding: $button-padding;
   text-align: center;
@@ -101,21 +95,23 @@ export default {
   font-family: $button-font-family;
   font-size: $button-font-size;
   font-weight: $button-font-weight;
+  line-height: $button-line-height;
   border-radius: $button-border-radius;
-  box-shadow: $button-shadow;
-  transition: $button-transition;
-  transition-property: box-shadow, background-color;
   height: $button-height;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   text-decoration: $button-text-decoration;
+  border: $button-border-width solid transparent;
 
-  &:active {
-    box-shadow: $button-active-shadow;
+  &:hover {
     text-decoration: $button-hover-text-decoration;
   }
 
-  &:hover {
+  &:focus {
+    text-decoration: $button-hover-text-decoration;
+  }
+
+  &:active {
     text-decoration: $button-hover-text-decoration;
   }
 
@@ -124,100 +120,78 @@ export default {
   fieldset[disabled] & {
     opacity: $button-disabled-opacity;
     cursor: not-allowed;
-    box-shadow: none;
+  }
 
-    &:hover {
-      box-shadow: none;
+  @each $variation, $values in $button-variations {
+    &.#{$variation} {
+      color: map-get($values, 'color');
+      background: map-get($values, 'bg');
+      border: map-get($values, 'border');
+
+      &:hover {
+        background: map-get($values, 'hover-bg');
+        color: map-get($values, 'hover-color');
+        border-color: map-get($values, 'hover-bg');
+      }
+
+      &:focus {
+        background: map-get($values, 'focus-bg');
+        color: map-get($values, 'focus-color');
+        border-color: map-get($values, 'focus-bg');
+      }
+
+      &:active {
+        background: map-get($values, 'active-bg');
+        color: map-get($values, 'active-color');
+        border-color: map-get($values, 'active-bg');
+      }
+
+      circle {
+        stroke: map-get($values, 'color');
+      }
+
+      &.ghost {
+        color: map-get($values, 'bg');
+
+        &:hover,
+        &:focus,
+        &:active {
+          color: map-get($values, 'active-bg');
+        }
+      }
+
+      &.disabled,
+      &[disabled],
+      fieldset[disabled] & {
+        color: map-get($values, 'color');
+        background: map-get($values, 'bg');
+        border: map-get($values, 'border');
+      }
     }
   }
-}
 
-.ripple {
-  position: relative;
-  overflow: hidden;
-  transform: translate3d(0, 0, 0);
+  &.ghost {
+    background: transparent;
+    border: transparent;
 
-  &:before {
-    content: '';
-    display: block;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    background-image: radial-gradient(circle, #000 10%, transparent 10.01%);
-    background-repeat: no-repeat;
-    background-position: 50%;
-    transform: scale(10, 10);
-    opacity: 0;
-    transition: transform 0.5s, opacity 0.5s;
+    &:hover,
+    &:focus,
+    &:active {
+      background: transparent;
+      border: transparent;
+    }
   }
 
-  &:active:before {
-    transform: scale(0, 0);
-    opacity: 0.2;
-    transition: 0s;
+  i {
+    height: $button-icon-size;
+    width: $button-icon-size;
+    margin-right: 8px;
   }
 }
 
 .loader {
-  top: $space-2;
-  width: $loader-size - $space-4;
-  height: $loader-size - $space-4;
-}
-
-@each $variation, $values in $button-variations {
-  .#{$variation} {
-    color: map-get($values, 'color');
-    background: map-get($values, 'bg');
-    border: map-get($values, 'border');
-
-    &:hover {
-      background: map-get($values, 'hover-bg');
-      color: map-get($values, 'hover-color');
-      border-color: map-get($values, 'hover-bg');
-    }
-
-    :global {
-      .vueLoaderPath {
-        stroke: map-get($values, 'color');
-      }
-    }
-  }
-
-  .outlined {
-    &.#{$variation} {
-      color: map-get($values, 'bg');
-
-      &:hover {
-        border-color: map-get($values, 'hover-bg');
-        color: map-get($values, 'hover-bg');
-      }
-
-      :global {
-        .vueLoaderPath {
-          stroke: map-get($values, 'bg');
-        }
-      }
-    }
-  }
-}
-
-.outlined {
-  border-width: $button-outlined-border-width;
-  background: transparent;
-
-  &:hover {
-    background: transparent;
-  }
-}
-
-.ghost {
-  border-color: transparent;
-
-  &:hover {
-    border-color: transparent !important;
-  }
+  position: initial;
+  width: $button-font-size;
+  height: $button-font-size;
 }
 </style>
