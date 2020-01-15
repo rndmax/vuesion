@@ -162,15 +162,15 @@
     <v-content>
       <section>
         <v-parallax src="img/villa_main.jpeg" height="600">
-          <v-layout column align-center justify-center class="white--text">
+          <v-container column align-center justify-center class="white--text">
             <!-- <img src="assets/vuetify.png" alt="Vuetify.js" height="200" /> -->
-            <h1 class="white--text mb-2 display-2 text-center text-uppercase font-weight-black">
+            <h1 class="white--text my-2 display-2 text-center text-uppercase font-weight-black v-text-field-solo">
               Surf village sri lanka
             </h1>
             <!-- <div class="subheading mb-4 text-center">Powered by Vuetify</div>-->
             <!-- <v-btn class="mt-12" color="blue lighten-2" dark large href="/pre-made-themes">Get Started</!-->
             <!-- <v-date-picker v-model="dates" range></!-->
-          </v-layout>
+          </v-container>
           <!-- <v-text-field v-model="dateRangeText" label="Date range" prepend-icon="event" readonly></v-text-field> -->
           <v-row>
             <v-spacer></v-spacer>
@@ -200,7 +200,7 @@
               <v-select :items="items" label="1" placeholder="Rooms" solo></v-select>
             </v-col>
             <v-col cols="1" class="px-1">
-              <v-btn class="pinkButton" height="48">Check</v-btn>
+              <v-btn class="white--text" color="#ef5382" height="48">Check</v-btn>
             </v-col>
             <v-spacer></v-spacer>
           </v-row>
@@ -423,4 +423,12 @@ export default {
 
 <style lang="scss" module>
 @import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons');
+
+h1 {
+  text-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2), 0px 2px 10px rgba(0, 0, 0, 0.14), 0px 1px 5px rgba(0, 0, 0, 0.12);
+}
+.pinkButton {
+  background-color: #ef5382 !important;
+  color: #ffffff !important;
+}
 </style>
